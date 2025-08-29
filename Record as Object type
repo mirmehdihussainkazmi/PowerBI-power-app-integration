@@ -1,0 +1,88 @@
+//passing record as object type
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Power BI Report</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="pbiFrame" allowFullScreen="true"></iframe>
+
+  <script>
+    async function loadPowerBI() {
+      try {
+        console.log("[PowerBI] Initializing...");
+
+        // Get params passed by Dataverse (form context -> web resource)
+        const params = new URLSearchParams(window.location.search);
+        const entityName = params.get("typename");   // msdyn_project
+        const recordId = params.get("id");           // GUID of current record
+
+        console.log("[PowerBI] entityName:", entityName, "recordId:", recordId);
+
+        if (!entityName || !recordId) {
+          console.error("[PowerBI] Missing entityName or recordId in query string.");
+          return;
+        }
+
+        // Fetch msdyn_subject (your Project Name column in Dataverse)
+        const record = await parent.Xrm.WebApi.retrieveRecord(entityName, recordId, "?$select=msdyn_subject");
+        const projectName = record.msdyn_subject;
+
+        if (!projectName) {
+          console.warn("[PowerBI] msdyn_subject is empty for this record.");
+          return;
+        }
+
+        console.log("[PowerBI] Project name from Dataverse:", projectName);
+
+        // ✅ Correct embeddable Power BI URL
+        const baseUrl = "https://app.powerbi.com/reportEmbed?reportId=9cf42554-a347-4847-8ba3-06ff0f8350d0&autoAuth=true&ctid=80a0cabe-dfaf-4e95-bdcb-366958455b28";
+
+        // ✅ Match your dataset schema
+        const pbiTable = "Projects";      
+        const pbiColumn = "Project_Name"; 
+
+        // Escape single quotes
+        const safeValue = projectName.trim().replace(/'/g, "''");
+
+        // Build filter
+        const filterClause = `${pbiTable}/${pbiColumn} eq '${safeValue}'`;
+        const fullUrl = baseUrl + "&filter=" + encodeURIComponent(filterClause);
+
+        console.log("[PowerBI] Filter clause:", filterClause);
+        console.log("[PowerBI] Full embed URL:", fullUrl);
+
+        // Set iframe source
+        document.getElementById("pbiFrame").src = fullUrl;
+
+        // 🔹 Also update Dataverse field (sds_projectspecificlink) with the generated URL
+        const updateObj = { "sds_projectspecificlink": fullUrl };
+        await parent.Xrm.WebApi.updateRecord(entityName, recordId, updateObj);
+
+        console.log("[PowerBI] Updated Dataverse field sds_projectspecificlink with embed URL.");
+
+      } catch (e) {
+        console.error("[PowerBI] Error:", e);
+      }
+    }
+
+    window.onload = loadPowerBI;
+  </script>
+</body>
+</html>
