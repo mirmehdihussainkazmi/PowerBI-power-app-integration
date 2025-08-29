@@ -30,8 +30,8 @@
 
         // Get params passed by Dataverse (form context -> web resource)
         const params = new URLSearchParams(window.location.search);
-        const entityName = params.get("typename");   // msdyn_project
-        const recordId = params.get("id");           // GUID of current record
+        const entityName = params.get("typename");   
+        const recordId = params.get("id");           
 
         console.log("[PowerBI] entityName:", entityName, "recordId:", recordId);
 
@@ -52,7 +52,7 @@
         console.log("[PowerBI] Project name from Dataverse:", projectName);
 
         // ✅ Correct embeddable Power BI URL
-        const baseUrl = "https://app.powerbi.com/reportEmbed?reportId=9cf42554-a347-4847-8ba3-06ff0f8350d0&autoAuth=true&ctid=80a0cabe-dfaf-4e95-bdcb-366958455b28";
+        const baseUrl = "";
 
         // ✅ Match your dataset schema
         const pbiTable = "Projects";      
